@@ -94,7 +94,7 @@ try{const s=await getDoc(doc(db,"public",await pid("CE-"+d,code)));if(s.exists()
 catch(e){S.view=null;S.cmsg="Erreur de connexion. Réessayez.";S.cerr=1}render()}
 
 function agentV(){
-if(!S.user)return'<h1>Espace agent</h1><div class="sub">Réservé aux administrateurs</div><div class="card"><button onclick="login()">Se connecter avec Google</button></div>';
+if(!S.user)return`<h1>Espace agent</h1><div class="sub">Réservé aux administrateurs</div><div class="card">${S.msg?`<p class="msg err">${esc(S.msg)}</p>`:""}<button onclick="login()">Se connecter avec Google</button></div>`;
 if(S.denied)return`<h1>Accès refusé</h1><div class="card"><p class="msg">Le compte <b>${esc(S.user.email)}</b> n’est pas administrateur.</p><button class="alt" onclick="logout()">Changer de compte</button></div>`;
 if(!S.admin)return'<p class="msg">Chargement…</p>';
 const c=S.cur&&cur();let h="";
@@ -141,7 +141,8 @@ const id=String(Date.now()),c={id,nom:n,num:u,adr:a,code:k,tx:[{d:today(),t:"d",
 async function importer(el){const f=el.files[0];if(!f)return;try{const arr=JSON.parse(await f.text());for(const c of arr){delete c.pk;await save(c)}S.msg="";alert(arr.length+" carnet(s) importé(s).")}catch(e){S.msg="Fichier invalide.";render()}}
 const go=id=>{S.cur=id;S.msg="";S.cm="";S.cf=null;render();scrollTo(0,0)};
 const tab=t=>{S.tab=t;render()};
-const login=()=>signInWithPopup(auth,new GoogleAuthProvider()).catch(e=>{S.msg=e.code;render()});
+const ERR={"auth/popup-blocked":"Le navigateur a bloqué la fenêtre Google : autorisez les pop-ups pour ce site.","auth/popup-closed-by-user":"La fenêtre Google a été fermée avant la fin de la connexion.","auth/cancelled-popup-request":"Connexion annulée, réessayez.","auth/unauthorized-domain":"Ce site n’est pas autorisé dans Firebase (Authentication > Domaines autorisés).","auth/operation-not-allowed":"La connexion Google n’est pas activée dans Firebase (Authentication > Sign-in method).","auth/network-request-failed":"Problème de réseau, réessayez."};
+const login=()=>{S.msg="";render();signInWithPopup(auth,new GoogleAuthProvider()).then(()=>{S.msg="";render()}).catch(e=>{S.msg=(ERR[e.code]||"Erreur de connexion")+" ["+(e.code||e.message)+"]";render()})};
 const logout=()=>signOut(auth);
 Object.assign(window,{S,render,tab,go,look,op,hint,susp,canc,setcode,gencode,addc,list,importer,login,logout});
 render();
