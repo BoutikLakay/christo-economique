@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Christo Économique</title>
+<style>
+:root{--bg:#faf6e8;--card:#fff;--tx:#2a2618;--mut:#7a7255;--ac:#b8860b;--acx:#fff;--ok:#2e7d32;--bad:#c62828;--bd:#e3dcc0;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#1b1810;--card:#262216;--tx:#f1ead2;--mut:#a89f80;--ac:#e0a92a;--acx:#1b1810;--ok:#6fcf74;--bad:#ef7b7b;--bd:#3d3722;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#1b1810;--card:#262216;--tx:#f1ead2;--mut:#a89f80;--ac:#e0a92a;--acx:#1b1810;--ok:#6fcf74;--bad:#ef7b7b;--bd:#3d3722;color-scheme:dark}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--tx);font:16px/1.4 system-ui,-apple-system,Segoe UI,Roboto,sans-serif}
+main{max-width:560px;margin:0 auto;padding:16px}
+h1{font-size:1.2rem;margin:0 0 2px}a{color:var(--ac)}
+.sub{color:var(--mut);font-size:.85rem;margin-bottom:14px}
+.card{background:var(--card);border:1px solid var(--bd);border-radius:12px;padding:14px;margin-bottom:12px}
+input,button,textarea{font:inherit;border-radius:8px;border:1px solid var(--bd);padding:10px;background:var(--card);color:var(--tx);width:100%}
+input{margin-bottom:8px}
+textarea{min-height:120px;font:12px/1.3 ui-monospace,monospace}
+button{background:var(--ac);color:var(--acx);border:0;font-weight:600;cursor:pointer}
+button.alt{background:transparent;color:var(--tx);border:1px solid var(--bd)}
+.row{display:flex;gap:8px}.cl{display:flex;justify-content:space-between;align-items:center;cursor:pointer}
+.cl b{display:block}.cl small{color:var(--mut)}.bal{font-weight:700}
+.big{font-size:2rem;font-weight:800;color:var(--ac)}.wrap{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:.9rem}
+th,td{padding:6px 4px;border-bottom:1px solid var(--bd);text-align:left;white-space:nowrap}
+th{color:var(--mut);font-weight:600;font-size:.78rem}.dp{color:var(--ok)}.rt{color:var(--bad)}
+.msg{font-size:.85rem;color:var(--mut);margin:0 0 8px}.err{color:var(--bad)}
+label{font-size:.8rem;color:var(--mut)}
+.tabs{display:flex;gap:6px;margin-bottom:14px}.tabs button{padding:8px 4px;font-size:.85rem}
+.hero{text-align:center;padding:14px 8px}
+</style>
+</head>
+<body>
+<main id="app"></main>
+<script>
+const $=i=>document.getElementById(i);
+let LS=null;try{localStorage.setItem("_t","1");localStorage.removeItem("_t");LS=localStorage}catch(e){LS=null}
+const K={c:"ce_clients_v1",a:"ce_agent_v1",b:"ce_backup_v1",p:"ce_pin_v1"};
+const rd=(k,d)=>{try{const v=LS&&LS.getItem(k);return v?JSON.parse(v):d}catch(e){return d}};
+const wr=(k,v)=>{try{if(!LS)return false;LS.setItem(k,JSON.stringify(v));return true}catch(e){return false}};
+const S={clients:rd(K.c,[]),tab:"home",cur:null,q:"",add:false,msg:"",info:"",cm:"",ce:0,cf:null,view:null,cn:"",cmsg:"",cerr:0,agent:rd(K.a,""),bk:"",lb:rd(K.b,""),pin:rd(K.p,null),unlocked:false,pm:"",rec:"",chg:false,rm:false,fails:0,until:0};
+if(!Array.isArray(S.clients))S.clients=[];
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const bal=c=>c.tx.reduce((b,x)=>x.x?b:b+(x.t=="d"?x.a:-x.a),0);
+const fmt=n=>n.toLocaleString("fr-FR")+" G";
+const fd=d=>{const p=d.split("-");return p[2]+"-"+p[1]+"-"+p[0].slice(2)};
+const today=()=>{const n=new Date();return n.getFullYear()+"-"+String(n.getMonth()+1).padStart(2,"0")+"-"+String(n.getDate()).padStart(2,"0")};
+const nn=x=>"CE-"+String(x).replace(/\D/g,"");
+const okc=c=>/^\d{6,}$/.test(c||"");
+const rcode=()=>String(Math.floor(100000+Math.random()*900000));
+const cur=()=>S.clients.find(x=>x.id==S.cur);
+
+/* enregistrement local (sur cet appareil) */
+function persist(){if(!wr(K.c,S.clients)){S.msg="Échec de l’enregistrement : le stockage du navigateur est bloqué ou plein.";return false}return true}
+function save(c){const i=S.clients.findIndex(x=>x.id==c.id);if(i<0)S.clients.push(c);else S.clients[i]=c;S.clients.sort((a,b)=>a.nom.localeCompare(b.nom));persist()}
+const setag=v=>{S.agent=v;wr(K.a,v)};
+
+function homeV(){return`<div class="hero"><div style="font-size:2.2rem">🏠⭐</div><h1 style="font-size:1.6rem">Christo Économique</h1><p class="sub" style="margin:4px 0 0">Konfyans se angajman nou nan pwojè w yo.</p></div>
+<div class="card"><b>Konsilte kanè w</b><p class="msg" style="margin:6px 0 10px">Antre nimewo kanè w ak kòd ou pou w wè balans ou ak operasyon yo.</p><button onclick="tab('client')">Espace client</button></div>
+<div class="card"><b>Kote nou ye</b><p class="msg" style="margin:6px 0 0">#39, Rue du Fort<br>Nou louvri 7è AM rive 8è PM<br>Tél. : <a href="tel:+50933268235">+509 3326-82-35</a> / <a href="tel:+50935458685">+509 3545-86-85</a><br><a href="mailto:christogames6@gmail.com">christogames6@gmail.com</a></p></div>
+<div class="card"><b>Règleman sou kanè yo</b><ol class="msg" style="padding-left:18px;margin:8px 0 0"><li>Nou louvri 7è AM rive 8è PM.</li><li>Yon kanè dwe fèt ak yon montan minimòm 250 goud.</li><li>Tout transaksyon dwe fèt avèk transparans.</li><li>Nenpòt reklamasyon dwe fèt nan respè.</li><li>Kenbe kanè a pwòp epi byen konsève.</li><li>Ou dwe avèti 1 jou avan soti 5 000 goud e 2 jou pou 10 000 goud.</li></ol></div>
+<p class="msg" style="text-align:center">Associé avec Christo Games · Christo Location Back-Up · Biah Games</p>`}
+
+function rows(tx,adm){let r=0,h="";tx.forEach((x,i)=>{if(!x.x)r+=x.t=="d"?x.a:-x.a;
+h+=`<tr${x.x?' style="text-decoration:line-through;opacity:.55"':""}><td>${fd(x.d)}</td><td class="dp">${x.t=="d"?x.a:""}</td><td class="rt">${x.t=="r"?x.a:""}</td><td><b>${x.x?"annulé":r}</b></td><td>${esc(x.s)}</td>${adm?"<td>"+(x.x?"":`<button class="alt" style="padding:4px 8px;width:auto;font-size:.75rem" onclick="canc(${i})">${S.cf===i?"Confirmer":"Annuler"}</button>`)+"</td>":""}</tr>`});return h}
+const thead='<tr><th>Date</th><th>Dépôt</th><th>Retrait</th><th>Balance</th><th>Signature</th></tr>';
+
+function clientV(){let h=`<h1>Christo Économique</h1><div class="sub">Espace client · consulter mon carnet</div>
+<div class="card"><label>Numéro du carnet</label><input id="cn" inputmode="numeric" placeholder="ex. 704" value="${esc(S.cn||"")}"><label>Code secret</label><input id="cc" type="password" inputmode="numeric" autocomplete="off"><button onclick="look()">Voir mon carnet</button><p class="msg${S.cerr?" err":""}" id="cm" style="margin:8px 0 0">${esc(S.cmsg)}</p></div>`;
+if(S.view){const v=S.view;
+if(v.sus)h+='<div class="card" style="border-color:var(--bad)"><b class="err">⛔ Carnet suspendu</b><p class="msg" style="margin:6px 0 0">Ce carnet est suspendu. Voyez la caisse pour plus d’informations.</p></div>';
+h+=`<div class="card"><h1>${esc(v.nom)}</h1><div class="sub">${esc(v.num)}</div><div class="sub" style="margin:0">Balance</div><div class="big">${fmt(bal(v))}</div><p class="msg" style="margin-top:6px">Dernière opération : ${v.tx.length?fd(v.tx[v.tx.length-1].d):"—"}</p></div><div class="card wrap"><table>${thead}${rows(v.tx,false)}</table></div><p class="msg">Ce solde est celui enregistré par l’agent. En cas de doute, présentez votre carnet à la caisse.</p>`}
+return h}
+function look(){const d=$("cn").value.replace(/\D/g,""),code=$("cc").value.trim();
+S.cn=d;if(!d||!code){S.cmsg="Entrez le numéro et le code.";S.cerr=1;S.view=null;return render()}
+const c=S.clients.find(x=>nn(x.num)==nn(d));
+if(c&&okc(c.code)&&c.code===code){S.view={nom:c.nom,num:c.num,tx:c.tx,sus:c.sus};S.cmsg="";S.cerr=0}else{S.view=null;S.cmsg="Numéro ou code incorrect.";S.cerr=1}
+render()}
+
+function bkV(){return `<div class="card" style="margin-top:12px"><b>Sauvegarde des carnets</b><p class="msg" style="margin:6px 0 10px">${S.lb?"Dernière sauvegarde : "+fd(S.lb)+".":"⚠ Aucune sauvegarde pour le moment."} Les carnets sont enregistrés seulement sur cet appareil : faites une sauvegarde chaque semaine.</p><button onclick="backup()">Sauvegarder les carnets</button>${S.bk?`<p class="msg" style="margin:10px 0 4px">Le téléchargement n’est pas disponible ici. Appuyez longuement dans la zone, choisissez « Tout sélectionner », copiez, puis collez le texte dans vos Notes.</p><textarea id="bkt" readonly onclick="this.select()">${esc(S.bk)}</textarea><button class="alt" style="margin-top:8px" onclick="bkdone()">C’est copié ✓</button>`:""}<label style="display:block;margin-top:12px">Restaurer ou importer des carnets (fichier .json)</label><input type="file" id="imp" accept=".json,application/json" onchange="restore(this)" style="margin:0"></div>`}
+
+/* code agent */
+async function hsh(s){try{if(typeof crypto!="undefined"&&crypto.subtle){const b=await crypto.subtle.digest("SHA-256",new TextEncoder().encode("ce|"+s));return [...new Uint8Array(b)].map(x=>x.toString(16).padStart(2,"0")).join("")}}catch(e){}let h=5381;for(const ch of "ce|"+s)h=((h<<5)+h+ch.charCodeAt(0))|0;return "f"+(h>>>0).toString(16)}
+const pmsg=()=>S.pm?`<p class="msg err">${esc(S.pm)}</p>`:"";
+function recV(){return `<h1>Code de secours</h1><div class="sub">À écrire sur papier maintenant</div><div class="card"><p class="msg">Si vous oubliez le code agent, ce code de secours permet d’en créer un nouveau sans perdre les carnets. Il ne sera plus affiché après.</p><div class="big" style="text-align:center;letter-spacing:.1em">${S.rec}</div><button onclick="recdone()" style="margin-top:12px">J’ai écrit le code de secours</button></div>`}
+function newV(){return `<h1>Espace agent</h1><div class="sub">Créez votre code agent</div><div class="card"><label>Nouveau code (4 caractères ou plus)</label><input id="p1" type="password" autocomplete="off"><label>Répétez le code</label><input id="p2" type="password" autocomplete="off">${pmsg()}<button onclick="mkpin()">Enregistrer le code</button></div><p class="msg">Ce code protège l’espace agent sur cet appareil.</p>`}
+function lockV(){if(S.rm)return `<h1>Code oublié</h1><div class="sub">Utilisez votre code de secours</div><div class="card"><label>Code de secours</label><input id="pr" inputmode="numeric" autocomplete="off"><label>Nouveau code agent</label><input id="p1" type="password" autocomplete="off"><label>Répétez le nouveau code</label><input id="p2" type="password" autocomplete="off">${pmsg()}<button onclick="recover()">Changer le code</button><button class="alt" style="margin-top:8px" onclick="S.rm=false;S.pm='';render()">Retour</button></div>`;
+return `<h1>Espace agent</h1><div class="sub">Réservé aux agents</div><div class="card"><label>Code agent</label><input id="pk" type="password" autocomplete="off" onkeydown="if(event.key=='Enter')unlock()">${pmsg()}<button onclick="unlock()">Entrer</button><button class="alt" style="margin-top:8px" onclick="S.rm=true;S.pm='';render()">Code oublié ?</button></div>`}
+function chgV(){return `<h1>Changer le code agent</h1><div class="card"><label>Nouveau code (4 caractères ou plus)</label><input id="p1" type="password" autocomplete="off"><label>Répétez le code</label><input id="p2" type="password" autocomplete="off">${pmsg()}<button onclick="chgpin()">Enregistrer</button><button class="alt" style="margin-top:8px" onclick="S.chg=false;S.pm='';render()">Annuler</button></div>`}
+function pinok(a,b){if(a.length<4){S.pm="Le code doit avoir au moins 4 caractères.";return false}if(a!==b){S.pm="Les deux codes ne sont pas identiques.";return false}return true}
+async function mkpin(){const a=$("p1").value.trim(),b=$("p2").value.trim();if(!pinok(a,b))return render();
+const rec=String(Math.floor(10000000+Math.random()*90000000));S.pin={h:await hsh(a),r:await hsh(rec)};
+if(!wr(K.p,S.pin)){S.pin=null;S.pm="Impossible d’enregistrer le code : le stockage du navigateur est bloqué.";return render()}
+S.rec=rec;S.pm="";S.unlocked=true;render()}
+function recdone(){S.rec="";render()}
+async function unlock(){if(Date.now()<S.until){S.pm="Trop d’essais. Attendez "+Math.ceil((S.until-Date.now())/1000)+" secondes.";return render()}
+if(await hsh($("pk").value.trim())===S.pin.h){S.unlocked=true;S.fails=0;S.pm=""}else{S.fails++;if(S.fails>=5){S.until=Date.now()+30000;S.fails=0}S.pm="Code incorrect."}render()}
+async function recover(){const r=$("pr").value.trim(),a=$("p1").value.trim(),b=$("p2").value.trim();
+if(await hsh(r)!==S.pin.r){S.pm="Code de secours incorrect.";return render()}
+if(!pinok(a,b))return render();
+const p={h:await hsh(a),r:S.pin.r};if(!wr(K.p,p)){S.pm="Impossible d’enregistrer le code.";return render()}
+S.pin=p;S.unlocked=true;S.rm=false;S.pm="";render()}
+async function chgpin(){const a=$("p1").value.trim(),b=$("p2").value.trim();if(!pinok(a,b))return render();
+const p={h:await hsh(a),r:S.pin.r};if(!wr(K.p,p)){S.pm="Impossible d’enregistrer le code.";return render()}
+S.pin=p;S.chg=false;S.pm="";S.info="✓ Code agent changé.";render()}
+function lock(){S.unlocked=false;S.cur=null;S.info="";render()}
+
+function agentV(){
+if(S.rec)return recV();
+if(!S.pin)return newV();
+if(!S.unlocked)return lockV();
+if(S.chg)return chgV();
+const c=S.cur&&cur();let h="";
+if(c){h+=`<button class="alt" onclick="go(null)" style="width:auto;margin-bottom:12px">← Clients</button>
+<div class="card"><h1>${esc(c.nom)}</h1><div class="sub">${esc(c.num)} · ${esc(c.adr)}</div><div class="sub" style="margin:0">Balance</div><div class="big">${fmt(bal(c))}</div></div>
+<div class="card"${c.sus?' style="border-color:var(--bad)"':""}><b>${c.sus?"⛔ Carnet suspendu":"Statut : actif"}</b><p class="msg" style="margin:6px 0 10px">${c.sus?"Dépôts et retraits bloqués. Le client voit « Carnet suspendu ».":"Suspendre bloque les dépôts et retraits."}</p><button class="alt" onclick="susp()">${c.sus?"Réactiver le carnet":"Suspendre le carnet"}</button></div>
+<div class="card"><label>Date</label><input type="date" id="dt" value="${today()}"><label>Montant (gourdes)</label><input type="number" id="am" inputmode="numeric" min="1" oninput="hint()"><p class="msg" id="hn"></p><div class="row"><button onclick="op('d')">+ Dépôt</button><button class="alt" onclick="op('r')">− Retrait</button></div>${S.msg?`<p class="msg err" style="margin-top:8px">${esc(S.msg)}</p>`:""}</div>
+<div class="card"><label>Code client (6 chiffres ou plus)</label><div class="row"><input id="cd" inputmode="numeric" value="${esc(c.code||"")}" style="margin:0"><button onclick="setcode()" style="width:auto">Enregistrer</button></div><button class="alt" onclick="gencode()" style="margin-top:8px">Générer un code automatique</button>${S.cm?`<p class="msg${S.ce?" err":""}" style="margin:8px 0 0">${esc(S.cm)}</p>`:""}</div>
+<div class="card wrap"><table>${thead.replace("</tr>","<th></th></tr>")}${rows(c.tx,true)}</table></div>
+<p class="msg">Retrait de 5 000 G : prévenir 1 jour avant. Retrait de 10 000 G : prévenir 2 jours avant.</p>`;return h}
+const tot=S.clients.reduce((s,c)=>s+bal(c),0);
+h+=`<h1>Christo Économique</h1><div class="sub">Espace agent · carnets enregistrés sur cet appareil · <a href="#" onclick="lock();return false">Verrouiller</a> · <a href="#" onclick="S.chg=true;S.pm='';render();return false">Changer le code</a></div>
+${LS?"":'<p class="msg err">⚠ Le stockage de ce navigateur est bloqué : les carnets seront perdus à la fermeture. Ouvrez la page dans un autre navigateur.</p>'}
+${S.msg&&!S.add?`<p class="msg err">${esc(S.msg)}</p>`:""}${S.info?`<p class="msg">${esc(S.info)}</p>`:""}
+<div class="card"><label>Nom de l’agent (signature)</label><input id="ag" value="${esc(S.agent)}" onchange="setag(this.value)" placeholder="ex. Casseus"><div class="sub" style="margin:0">${S.clients.length} client(s) · total ${fmt(tot)}</div></div>
+<input id="q" placeholder="Chercher un nom ou un numéro" value="${esc(S.q)}" oninput="S.q=this.value;list()"><div id="ls"></div>`;
+if(S.add)h+=`<div class="card"><label>Nom</label><input id="nn"><label>Numéro</label><input id="nu" value="${nextNum()}"><label>Adresse</label><input id="na"><label>Code client</label><input id="nc" inputmode="numeric" value="${rcode()}"><label>Premier dépôt (minimum 250 G)</label><input id="n1" type="number" inputmode="numeric" value="250">${S.msg?`<p class="msg err">${esc(S.msg)}</p>`:""}<div class="row"><button onclick="addc()">Ouvrir le carnet</button><button class="alt" onclick="S.add=false;S.msg='';render()">Annuler</button></div></div>`;
+else h+=`<button onclick="S.add=true;S.msg='';render()">+ Nouveau client</button>`+bkV();
+return h}
+
+function nextNum(){let m=700;S.clients.forEach(c=>{const n=parseInt(c.num.replace(/\D/g,""));if(n>m)m=n});return"CE-"+(m+1)}
+function list(){const q=S.q.toLowerCase();$("ls").innerHTML=S.clients.filter(c=>(c.nom+" "+c.num).toLowerCase().includes(q)).map(c=>`<div class="card cl" onclick="go('${c.id}')"><div><b>${esc(c.nom)}</b><small>${c.sus?"⛔ SUSPENDU · ":""}${esc(c.num)} · ${esc(c.adr)}${okc(c.code)?"":" · ⚠ code à définir (6 chiffres)"}</small></div><div class="bal">${fmt(bal(c))}</div></div>`).join("")||'<p class="msg">Aucun client trouvé.</p>'}
+
+function guard(){if(!S.agent.trim()){S.msg="Entrez d’abord le nom de l’agent.";render();return false}return true}
+function op(t){const c=cur(),a=parseInt($("am").value),d=$("dt").value;
+if(c.sus){S.msg="Carnet suspendu : dépôts et retraits bloqués.";return render()}
+if(!a||a<=0){S.msg="Entrez un montant valide.";return render()}
+if(!guard())return;
+if(t=="r"&&a>bal(c)){S.msg="Retrait impossible : la balance est de "+fmt(bal(c))+".";return render()}
+c.tx.push({d:d||today(),t,a,s:S.agent.trim()});S.msg="";save(c);render()}
+function hint(){const a=parseInt($("am").value)||0;$("hn").textContent=a>=10000?"Retrait de 10 000 G ou plus : le client doit prévenir 2 jours avant.":a>=5000?"Retrait de 5 000 G ou plus : le client doit prévenir 1 jour avant.":""}
+function susp(){const c=cur();c.sus=!c.sus;S.msg="";save(c);render()}
+function canc(i){const c=cur(),x=c.tx[i];if(!x||x.x)return;if(S.cf!==i){S.cf=i;return render()}
+S.cf=null;x.x=1;x.xs=S.agent;if(bal(c)<0){x.x=0;delete x.xs;S.msg="Annulation impossible : la balance deviendrait négative.";return render()}S.msg="";save(c);render()}
+function setcode(){const c=cur(),v=$("cd").value.trim();
+if(!okc(v)){S.cm="Code refusé : il faut au moins 6 chiffres (ex. 482915), sans lettres ni espaces.";S.ce=1;return render()}
+c.code=v;S.cm="✓ Code enregistré. Le client peut maintenant voir son carnet.";S.ce=0;save(c);render()}
+function gencode(){const c=cur();c.code=rcode();S.cm="✓ Nouveau code : "+c.code+". Donnez-le au client.";S.ce=0;save(c);render()}
+function addc(){const n=$("nn").value.trim(),u=$("nu").value.trim(),a=$("na").value.trim(),k=$("nc").value.trim(),m=parseInt($("n1").value);
+if(!n||!u){S.msg="Nom et numéro obligatoires.";return render()}
+if(!okc(k)){S.msg="Le code doit avoir au moins 6 chiffres.";return render()}
+if(S.clients.some(c=>nn(c.num)==nn(u))){S.msg="Ce numéro existe déjà.";return render()}
+if(!m||m<250){S.msg="Le premier dépôt doit être d’au moins 250 G.";return render()}
+if(!guard())return;
+const id=String(Date.now()),c={id,nom:n,num:u,adr:a,code:k,tx:[{d:today(),t:"d",a:m,s:S.agent.trim()}]};S.add=false;S.msg="";save(c);go(id)}
+
+async function backup(){const data=JSON.stringify({app:"christo-economique",v:1,t:new Date().toISOString(),agent:S.agent,clients:S.clients},null,1);let ok=false;
+try{if(typeof claude!="undefined"){const dl=await claude.use("downloads");if(dl){await dl.save({filename:"carnets-"+today()+".json",data});ok=true}}}
+catch(e){if(e&&e.code=="declined"){S.info="Sauvegarde annulée.";return render()}}
+if(ok){S.lb=today();wr(K.b,S.lb);S.bk="";S.info="✓ Sauvegarde enregistrée.";S.msg=""}else{S.bk=data;S.info=""}
+render()}
+function bkdone(){S.lb=today();wr(K.b,S.lb);S.bk="";S.info="✓ Sauvegarde notée.";render()}
+async function restore(el){const f=el.files[0];if(!f)return;
+try{const j=JSON.parse(await f.text()),arr=Array.isArray(j)?j:j.clients;if(!Array.isArray(arr))throw 0;let n=0;
+for(const c of arr){if(!c||!c.nom||!c.num||!Array.isArray(c.tx))continue;delete c.pk;if(!c.id)c.id=String(Date.now())+"-"+n;
+const i=S.clients.findIndex(x=>x.id==c.id||nn(x.num)==nn(c.num));if(i<0)S.clients.push(c);else S.clients[i]=c;n++}
+S.clients.sort((a,b)=>a.nom.localeCompare(b.nom));
+if(!persist()){S.info="";return render()}
+S.msg="";S.info=n+" carnet(s) importé(s). Ceux qui avaient le même numéro ont été remplacés.";render()}
+catch(e){S.msg="Fichier invalide.";S.info="";render()}}
+
+const go=id=>{S.cur=id;S.msg="";S.info="";S.cm="";S.cf=null;render();scrollTo(0,0)};
+const tab=t=>{S.tab=t;S.info="";S.pm="";if(t!="client"){S.view=null;S.cmsg="";S.cerr=0}if(t!="agent"){S.unlocked=false;S.cur=null;S.chg=false;S.rm=false}render()};
+const tabs=()=>'<div class="tabs">'+[["home","Accueil"],["client","Espace client"],["agent","Espace agent"]].map(x=>`<button class="${S.tab==x[0]?"":"alt"}" onclick="tab('${x[0]}')">${x[1]}</button>`).join("")+'</div>';
+function render(){const h=S.tab=="home"?homeV():S.tab=="client"?clientV():agentV();$("app").innerHTML=tabs()+h;if(S.tab=="agent"&&!S.cur)list()}
+Object.assign(window,{S,render,tab,go,look,op,hint,susp,canc,setcode,gencode,addc,list,backup,bkdone,restore,setag,mkpin,recdone,unlock,recover,chgpin,lock});
+render();
+</script>
+</body>
+</html>
